@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Webpage Summarizer with LangChain",
+  "version": "1.0",
+  "description": "Reads the current webpage and provides an AI summary using LangChain.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
