@@ -1,34 +1,43 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // --- Startup Validation ---
-if (!process.env.GEMINI_API_KEY) {
-    console.error("FATAL: GEMINI_API_KEY is not set in your .env file. Exiting.");
+if (!process.env.GROQ_API_KEY) {
+    console.error("FATAL: GROQ_API_KEY is not set in your .env file. Exiting.");
     process.exit(1);
 }
 
 //Langchain imports
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGroq } from "@langchain/groq";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
 const app = express();
 
-// Restrict CORS to localhost (Chrome extension uses chrome-extension:// or localhost origins)
+// Restrict CORS to localhost and Chrome extensions
 app.use(cors({
     origin: ['http://localhost', 'http://127.0.0.1', /^chrome-extension:\/\//],
-    methods: ['POST'],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
 }));
 
 app.use(express.json({ limit: '10mb' })); //Allow large webpage texts
 
-// Initialise LangChain Model
-const model = new ChatGoogleGenerativeAI({
-    model: "gemini-3.8-flash-lite-tts",
-    apiKey: process.env.GEMINI_API_KEY,
+// Health check endpoint
+app.get('/', (req, res) => {
+    res.json({ status: "ok", message: `Web Summarizer Server running with Groq (${process.env.GROQ_MODEL || 'openai/gpt-oss-120b'})` });
+});
+
+// Initialise LangChain Model with Groq
+const model = new ChatGroq({
+    model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
+    apiKey: process.env.GROQ_API_KEY,
     temperature: 0.3,
 });
 
@@ -70,7 +79,7 @@ app.post('/summarize', async (req, res) => {
         // Return a more descriptive error without leaking raw stack traces
         const isApiError = error?.message?.includes("API key") || error?.status === 401 || error?.status === 403;
         if (isApiError) {
-            return res.status(500).json({ error: "Invalid or unauthorized API key. Check your GEMINI_API_KEY." });
+            return res.status(500).json({ error: "Invalid or unauthorized API key. Check your GROQ_API_KEY." });
         }
 
         res.status(500).json({ error: "Failed to generate summary. Please try again." });
