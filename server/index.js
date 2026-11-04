@@ -20,9 +20,21 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 
 const app = express();
 
-// Restrict CORS to localhost and Chrome extensions
+// CORS configuration: allows extension origins, local development, and production
 app.use(cors({
-    origin: ['http://localhost', 'http://127.0.0.1', /^chrome-extension:\/\//],
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, extension background)
+        if (!origin) return callback(null, true);
+        if (
+            origin.startsWith('chrome-extension://') ||
+            origin.startsWith('edge-extension://') ||
+            origin.startsWith('http://localhost') ||
+            origin.startsWith('http://127.0.0.1')
+        ) {
+            return callback(null, true);
+        }
+        return callback(null, true);
+    },
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type'],
 }));

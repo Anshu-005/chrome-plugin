@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: web-summarizer-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PORT
+        value: 10000
+

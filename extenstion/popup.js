@@ -1,3 +1,8 @@
+// Set to your deployed backend URL when ready (e.g. 'https://web-summarizer-api.onrender.com')
+const CONFIG = {
+  BACKEND_URL: 'http://localhost:3000'
+};
+
 function init() {
   const summarizeBtn = document.getElementById('summarizeBtn');
   const resultDiv = document.getElementById('result');
@@ -36,8 +41,8 @@ function init() {
         throw new Error('No readable text found on this page.');
       }
 
-      // 3. Send text to the backend server
-      const response = await fetch('http://localhost:3000/summarize', {
+      // 3. Send text to backend server
+      const response = await fetch(`${CONFIG.BACKEND_URL}/summarize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -56,7 +61,7 @@ function init() {
 
     } catch (error) {
       console.error(error);
-      resultDiv.innerText = 'Error: ' + (error.message || 'Could not connect to backend server. Make sure it is running on http://localhost:3000.');
+      resultDiv.innerText = 'Error: ' + (error.message || `Could not connect to backend server at ${CONFIG.BACKEND_URL}.`);
       resultDiv.style.display = 'block';
     } finally {
       loader.style.display = 'none';
