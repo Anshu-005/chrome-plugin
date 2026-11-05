@@ -9,8 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // --- Startup Validation ---
 if (!process.env.GROQ_API_KEY) {
-    console.error("FATAL: GROQ_API_KEY is not set in your .env file. Exiting.");
-    process.exit(1);
+    console.warn("WARNING: GROQ_API_KEY is not set in environment variables.");
 }
 
 //Langchain imports
@@ -43,15 +42,24 @@ app.use(express.json({ limit: '10mb' })); //Allow large webpage texts
 
 // Health check endpoint
 app.get('/', (req, res) => {
+    if (!process.env.GROQ_API_KEY) {
+        return res.json({
+            status: "warning",
+            message: "Server is running, but GROQ_API_KEY is missing in your environment variables. Please add it in your hosting dashboard."
+        });
+    }
     res.json({ status: "ok", message: `Web Summarizer Server running with Groq (${process.env.GROQ_MODEL || 'openai/gpt-oss-120b'})` });
 });
 
 // Initialise LangChain Model with Groq
-const model = new ChatGroq({
-    model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
-    apiKey: process.env.GROQ_API_KEY,
-    temperature: 0.3,
-});
+const getModel = () => {
+    if (!process.env.GROQ_API_KEY) return null;
+    return new ChatGroq({
+        model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
+        apiKey: process.env.GROQ_API_KEY,
+        temperature: 0.3,
+    });
+};
 
 //Define the summarization prompt template
 const promptTemplate = PromptTemplate.fromTemplate(
@@ -65,11 +73,17 @@ const promptTemplate = PromptTemplate.fromTemplate(
 );
 
 const outputParser = new StringOutputParser();
-const chain = promptTemplate.pipe(model).pipe(outputParser);
 
 //API endpoint for summarization
 app.post('/summarize', async (req, res) => {
     try {
+        if (!process.env.GROQ_API_KEY) {
+            return res.status(500).json({ error: "GROQ_API_KEY is not configured on this server. Please add it to your hosting Environment Variables." });
+        }
+
+        const model = getModel();
+        const chain = promptTemplate.pipe(model).pipe(outputParser);
+
         const { text } = req.body;
 
         // Guard against missing, non-string, or blank inputs
