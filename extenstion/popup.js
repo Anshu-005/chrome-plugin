@@ -1,6 +1,6 @@
 // Set to your deployed backend URL when ready (e.g. 'https://web-summarizer-api.onrender.com')
 const CONFIG = {
-  BACKEND_URL: 'http://localhost:3000'
+  BACKEND_URL: 'https://chrome-plugin.onrender.com'
 };
 
 function init() {
